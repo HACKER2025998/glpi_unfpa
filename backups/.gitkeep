@@ -1,0 +1,2 @@
+# Fichier vide — juste pour que Git suive le dossier backups
+touch backups/.gitkeep

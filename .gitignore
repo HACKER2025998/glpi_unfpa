@@ -1,0 +1,12 @@
+# Sécurité — ne jamais committer
+.env
+*.sql
+*.log
+
+# Sauvegardes
+backups/*
+!backups/.gitkeep
+
+# Système
+.DS_Store
+Thumbs.db

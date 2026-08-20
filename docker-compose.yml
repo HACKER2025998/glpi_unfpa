@@ -1,0 +1,77 @@
+version: '3.8'
+
+# ================================================
+# GLPI - Bureau UNFPA Togo
+# Auteur : Adjogble Bernard — Stage IAI-Togo 2026
+# ================================================
+
+services:
+
+  # ────────────────────────────
+  # BASE DE DONNÉES MARIADB
+  # ────────────────────────────
+  mariadb:
+    image: mariadb:10.6
+    container_name: glpi-mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - glpi_db_data:/var/lib/mysql
+      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./backups:/backups
+    networks:
+      - glpi_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ────────────────────────────
+  # APPLICATION GLPI
+  # ────────────────────────────
+  glpi:
+    build:
+      context: ./glpi
+      dockerfile: Dockerfile
+    container_name: glpi-app
+    restart: always
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      MARIADB_HOST: mariadb
+      MARIADB_PORT: 3306
+      MARIADB_DATABASE: ${MYSQL_DATABASE}
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - glpi_files:/var/www/html/glpi/files
+      - glpi_plugins:/var/www/html/glpi/plugins
+      - glpi_config:/var/www/html/glpi/config
+    ports:
+      - "${GLPI_PORT:-80}:80"
+    networks:
+      - glpi_network
+
+# ────────────────────────────
+# VOLUMES PERSISTANTS
+# ────────────────────────────
+volumes:
+  glpi_db_data:
+  glpi_files:
+  glpi_plugins:
+  glpi_config:
+
+# ────────────────────────────
+# RÉSEAU INTERNE DOCKER
+# ────────────────────────────
+networks:
+  glpi_network:
+    driver: bridge
