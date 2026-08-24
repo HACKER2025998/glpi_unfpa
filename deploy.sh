@@ -72,22 +72,22 @@ echo -e "${YELLOW}   Configuration de votre déploiement   ${NC}"
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
 echo ""
 
-read -p "📌 Nom d'utilisateur base de données [glpiuser] : " DB_USER
+read -p " Nom d'utilisateur base de données [glpiuser] : " DB_USER
 DB_USER=${DB_USER:-glpiuser}
 
-read -s -p "🔒 Mot de passe base de données : " DB_PASS
+read -s -p " Mot de passe base de données : " DB_PASS
 echo ""
 if [ -z "$DB_PASS" ]; then
     error "Le mot de passe ne peut pas être vide"
 fi
 
-read -s -p "🔒 Mot de passe ROOT MariaDB : " DB_ROOT_PASS
+read -s -p " Mot de passe ROOT MariaDB : " DB_ROOT_PASS
 echo ""
 if [ -z "$DB_ROOT_PASS" ]; then
     error "Le mot de passe root ne peut pas être vide"
 fi
 
-read -p "🌐 Port d'accès GLPI [80] : " GLPI_PORT
+read -p " Port d'accès GLPI [80] : " GLPI_PORT
 GLPI_PORT=${GLPI_PORT:-80}
 
 # ────────────────────────────────────────────────
@@ -143,10 +143,10 @@ fi
 # IMPORT BASE DE DONNÉES EXISTANTE
 # ────────────────────────────────────────────────
 echo ""
-read -p "📦 Voulez-vous importer une base de données existante ? (o/n) : " IMPORT_DB
+read -p " Voulez-vous importer une base de données existante ? (o/n) : " IMPORT_DB
 
 if [ "$IMPORT_DB" = "o" ] || [ "$IMPORT_DB" = "O" ]; then
-    read -p "📂 Chemin complet du fichier SQL : " SQL_FILE
+    read -p " Chemin complet du fichier SQL : " SQL_FILE
     if [ -f "$SQL_FILE" ]; then
         info "Import de la base de données en cours..."
         docker exec -i glpi-mariadb mysql \
