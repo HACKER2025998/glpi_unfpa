@@ -186,7 +186,7 @@ info "Demarrage de GLPI..."
 docker compose up -d glpi || error "Echec du demarrage de GLPI"
 
 info "Initialisation (droits, config, plugins)..."
-sleep 20
+sleep 10
 
 RUN=$(docker inspect -f '{{.State.Running}}' glpi-app 2>/dev/null)
 [ "$RUN" = "true" ] || { docker compose logs --tail 40 glpi; error "Conteneur GLPI arrete"; }
@@ -199,11 +199,13 @@ ok "Conteneur GLPI actif"
 # ────────────────────────────────────────────────
 info "Verification de la reponse HTTP..."
 CODE=""
-for i in $(seq 1 20); do
-    CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "http://127.0.0.1:${GLPI_PORT}/" 2>/dev/null)
+for i in $(seq 1 40); do
+    CODE=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 5 \
+           "http://127.0.0.1:${GLPI_PORT}/" 2>/dev/null)
     case "$CODE" in
         200|302|303) break ;;
     esac
+    [ $((i % 5)) -eq 0 ] && info "  toujours en attente d'Apache (${i}/40)..."
     sleep 3
 done
 

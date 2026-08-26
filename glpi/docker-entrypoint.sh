@@ -36,13 +36,25 @@ log "Application des droits..."
 mkdir -p "${GLPI_DIR}/files" "${GLPI_DIR}/config" \
          "${GLPI_DIR}/plugins" "${GLPI_DIR}/marketplace"
 
-chown -R www-data:www-data "${GLPI_DIR}"
-find "${GLPI_DIR}" -type d -exec chmod 755 {} \;
-find "${GLPI_DIR}" -type f -exec chmod 644 {} \;
+# IMPORTANT : ne JAMAIS faire "find ... -exec chmod {} \;" ici.
+# GLPI contient plus de 40 000 fichiers (vendor/) : un processus par
+# fichier bloque le demarrage plusieurs minutes et Apache ne repond pas.
+# L'image a deja les bons droits ; seuls les repertoires montes en
+# volume doivent etre repris, et en UN SEUL passage recursif.
+for d in files config marketplace plugins; do
+    cible="${GLPI_DIR}/${d}"
+    [ -d "$cible" ] || continue
+    if [ "$(stat -c %U "$cible" 2>/dev/null)" != "www-data" ]; then
+        log "  correction de ${d}/"
+        chown -R www-data:www-data "$cible"
+    fi
+done
 
-# Ces repertoires doivent etre inscriptibles par Apache
-chmod -R u+rwX,g+rwX "${GLPI_DIR}/files" "${GLPI_DIR}/config" \
-                     "${GLPI_DIR}/plugins" "${GLPI_DIR}/marketplace"
+# X majuscule : bit d'execution sur les repertoires uniquement
+chmod -R u=rwX,g=rX,o= "${GLPI_DIR}/config"
+chmod -R u=rwX,g=rX,o=rX "${GLPI_DIR}/files" \
+                         "${GLPI_DIR}/marketplace" "${GLPI_DIR}/plugins"
+log "Droits appliques."
 
 touch /var/log/glpi_php_errors.log /var/log/glpi_cron.log
 chown www-data:www-data /var/log/glpi_php_errors.log /var/log/glpi_cron.log

@@ -98,9 +98,11 @@ RUN wget -q \
 # ────────────────────────────
 # DROITS DE BASE (recalcules au demarrage par l'entrypoint)
 # ────────────────────────────
+# Un seul passage recursif. L'ancienne version utilisait
+# "find -exec chmod {} \;" : un processus par fichier, soit plus de
+# 40 000 appels, d'ou les ~400 s de build sur cette etape.
 RUN chown -R www-data:www-data /var/www/html/glpi \
-    && find /var/www/html/glpi -type d -exec chmod 755 {} \; \
-    && find /var/www/html/glpi -type f -exec chmod 644 {} \;
+    && chmod -R u=rwX,g=rX,o=rX /var/www/html/glpi
 
 # ────────────────────────────
 # CRON GLPI
