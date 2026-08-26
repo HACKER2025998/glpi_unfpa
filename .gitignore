@@ -1,6 +1,5 @@
 # Sécurité — ne jamais committer
 .env
-*.sql
 *.log
 
 # Sauvegardes
