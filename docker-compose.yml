@@ -1,37 +1,40 @@
-version: '3.8'
-
 # ================================================
-# GLPI - Bureau UNFPA Togo
+# GLPI — Bureau UNFPA Togo
 # Auteur : Adjogble Bernard — Stage IAI-Togo 2026
+# (la cle "version:" est obsolete depuis Compose v2)
 # ================================================
 
 services:
 
   # ────────────────────────────
-  # BASE DE DONNÉES MARIADB
+  # BASE DE DONNEES MARIADB
   # ────────────────────────────
   mariadb:
-    image: mariadb:10.6
+    image: mariadb:10.11
     container_name: glpi-mariadb
     restart: always
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-file-per-table=1
+      - --sql-mode=NO_ENGINE_SUBSTITUTION
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DATABASE}
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - glpi_db_data:/var/lib/mysql
-      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./mariadb/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
       - ./backups:/backups
     networks:
       - glpi_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
-             "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 30s
+      retries: 12
+      start_period: 40s
 
   # ────────────────────────────
   # APPLICATION GLPI
@@ -53,8 +56,8 @@ services:
       MARIADB_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - glpi_files:/var/www/html/glpi/files
-      - glpi_plugins:/var/www/html/glpi/plugins
       - glpi_config:/var/www/html/glpi/config
+      - glpi_marketplace:/var/www/html/glpi/marketplace
     ports:
       - "${GLPI_PORT:-80}:80"
     networks:
@@ -62,15 +65,18 @@ services:
 
 # ────────────────────────────
 # VOLUMES PERSISTANTS
+# NOTE : plugins/ n'est volontairement PAS un volume.
+# Data Injection est fourni par l'image ; un volume vide
+# masquerait les fichiers du plugin au premier demarrage.
 # ────────────────────────────
 volumes:
   glpi_db_data:
   glpi_files:
-  glpi_plugins:
   glpi_config:
+  glpi_marketplace:
 
 # ────────────────────────────
-# RÉSEAU INTERNE DOCKER
+# RESEAU INTERNE
 # ────────────────────────────
 networks:
   glpi_network:
